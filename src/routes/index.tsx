@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { searchListings, type Listing } from "@/lib/api/listings.functions";
@@ -18,14 +18,20 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const search = useServerFn(searchListings);
-  const [city, setCity] = useState("");
-  const [minPrice, setMinPrice] = useState<string>("");
-  const [maxPrice, setMaxPrice] = useState<string>("");
+  const [city, setCity] = useState("Milano");
+  const [minPrice, setMinPrice] = useState<string>("500");
+  const [maxPrice, setMaxPrice] = useState<string>("900");
 
   const mutation = useMutation({
     mutationFn: (input: { city: string; minPrice?: number; maxPrice?: number }) =>
       search({ data: input }),
   });
+
+  // Auto-run a default search on first load: Milano, 500–900€
+  useEffect(() => {
+    mutation.mutate({ city: "Milano", minPrice: 500, maxPrice: 900 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();

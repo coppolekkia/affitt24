@@ -143,8 +143,26 @@ function Index() {
                   href={l.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start"
+                  className="grid grid-cols-1 md:grid-cols-[200px_1fr_auto] gap-6 items-start"
                 >
+                  <div className="aspect-[4/3] w-full overflow-hidden rounded-md bg-muted border border-border">
+                    {l.image ? (
+                      <img
+                        src={l.image}
+                        alt={l.title}
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                        className="h-full w-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground">
+                        nessuna foto
+                      </div>
+                    )}
+                  </div>
                   <div>
                     <div className="flex items-center gap-3 mb-2">
                       <span className="text-[10px] uppercase tracking-[0.2em] text-accent">
@@ -155,10 +173,13 @@ function Index() {
                       {l.title}
                     </h3>
                     {l.description && (
-                      <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
+                      <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
                         {l.description}
                       </p>
                     )}
+                    <span className="inline-block mt-3 text-[11px] uppercase tracking-[0.2em] text-muted-foreground group-hover:text-accent">
+                      Vedi annuncio ↗
+                    </span>
                   </div>
                   <div className="text-right shrink-0">
                     <div className="font-serif text-2xl">

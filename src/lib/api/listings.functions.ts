@@ -113,8 +113,8 @@ export const searchListings = createServerFn({ method: "POST" })
             [];
           const arr = Array.isArray(items) ? items : [];
           console.log(
-            `[searchListings] ${domain} -> ${arr.length} raw results`,
-            arr.slice(0, 3).map((x: any) => x.url ?? x.link),
+            `[searchListings] ${domain} -> ${arr.length} raw urls: ` +
+              JSON.stringify(arr.map((x: any) => x.url ?? x.link)),
           );
           return arr;
         } catch (err) {

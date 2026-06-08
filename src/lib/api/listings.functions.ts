@@ -39,6 +39,33 @@ function sourceFromUrl(url: string): string {
   }
 }
 
+// Returns true if the URL looks like an individual listing page, not a search/index page.
+function isDetailUrl(url: string): boolean {
+  if (!url) return false;
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return false;
+  }
+  const host = u.hostname.replace(/^www\./, "");
+  const path = u.pathname;
+
+  if (host.includes("immobiliare.it")) {
+    // Detail pages: /annunci/<id>/  — exclude /affitto-case/, /vendita-case/, search pages
+    return /^\/annunci\/\d+\/?$/.test(path);
+  }
+  if (host.includes("idealista.it")) {
+    // Detail pages: /immobile/<id>/
+    return /^\/immobile\/\d+\/?$/.test(path);
+  }
+  if (host.includes("subito.it")) {
+    // Detail pages end with -<id>.htm (e.g. /appartamenti/.../bilocale-milano-...-<id>.htm)
+    return /-\d+\.htm$/.test(path);
+  }
+  return false;
+}
+
 function extractFirstImage(md: string): string | null {
   if (!md) return null;
   const m = md.match(/!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/);
@@ -95,6 +122,7 @@ export const searchListings = createServerFn({ method: "POST" })
     perSource.flat().forEach((r: any) => {
       const url: string = r.url ?? r.link ?? "";
       if (!url) return;
+      if (!isDetailUrl(url)) return;
       const title: string = r.title ?? r.name ?? "Annuncio";
       const md: string = r.markdown ?? r.data?.markdown ?? "";
       const description: string =

@@ -4,6 +4,13 @@ import Firecrawl from "@mendable/firecrawl-js";
 
 const SOURCES = ["immobiliare.it", "idealista.it", "subito.it"] as const;
 
+// Per-source query hints biased toward detail pages
+const SOURCE_QUERIES: Record<(typeof SOURCES)[number], string> = {
+  "immobiliare.it": "site:immobiliare.it/annunci",
+  "idealista.it": "site:idealista.it/immobile",
+  "subito.it": "site:subito.it appartamenti",
+};
+
 const InputSchema = z.object({
   city: z.string().trim().min(1).max(80),
   minPrice: z.number().int().min(0).max(100000).optional(),
@@ -52,15 +59,12 @@ function isDetailUrl(url: string): boolean {
   const path = u.pathname;
 
   if (host.includes("immobiliare.it")) {
-    // Detail pages: /annunci/<id>/  — exclude /affitto-case/, /vendita-case/, search pages
-    return /^\/annunci\/\d+\/?$/.test(path);
+    return /\/annunci\/\d+\/?$/.test(path);
   }
   if (host.includes("idealista.it")) {
-    // Detail pages: /immobile/<id>/
-    return /^\/immobile\/\d+\/?$/.test(path);
+    return /\/immobile\/\d+\/?$/.test(path);
   }
   if (host.includes("subito.it")) {
-    // Detail pages end with -<id>.htm (e.g. /appartamenti/.../bilocale-milano-...-<id>.htm)
     return /-\d+\.htm$/.test(path);
   }
   return false;
@@ -91,18 +95,15 @@ export const searchListings = createServerFn({ method: "POST" })
     }
     const firecrawl = new Firecrawl({ apiKey });
 
-    const query = `appartamento in affitto ${data.city}`;
-
     const perSource = await Promise.all(
       SOURCES.map(async (domain) => {
         try {
-          const res = await firecrawl.search(`${query} site:${domain}`, {
-            limit: 6,
+          const q = `${SOURCE_QUERIES[domain]} affitto appartamento ${data.city}`;
+          const res = await firecrawl.search(q, {
+            limit: 10,
             sources: ["web"],
-            scrapeOptions: {
-              formats: ["markdown"],
-              onlyMainContent: true,
-            },
+            // Skip scrape on search to keep things fast & cheap;
+            // we'll fall back to metadata only.
           } as any);
           // Normalize results across SDK shapes
           const items =
@@ -110,7 +111,12 @@ export const searchListings = createServerFn({ method: "POST" })
             (res as any)?.data?.web ??
             (res as any)?.data ??
             [];
-          return Array.isArray(items) ? items : [];
+          const arr = Array.isArray(items) ? items : [];
+          console.log(
+            `[searchListings] ${domain} -> ${arr.length} raw results`,
+            arr.slice(0, 3).map((x: any) => x.url ?? x.link),
+          );
+          return arr;
         } catch (err) {
           console.error("Firecrawl search failed for", domain, err);
           return [];

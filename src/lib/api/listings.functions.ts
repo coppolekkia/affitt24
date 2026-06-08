@@ -16,6 +16,7 @@ export type Listing = {
   description: string;
   price: number | null;
   source: string;
+  image: string | null;
 };
 
 function extractPrice(text: string): number | null {
@@ -38,6 +39,22 @@ function sourceFromUrl(url: string): string {
   }
 }
 
+function extractFirstImage(md: string): string | null {
+  if (!md) return null;
+  const m = md.match(/!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/);
+  return m?.[1] ?? null;
+}
+
+function stripMarkdown(md: string): string {
+  if (!md) return "";
+  return md
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/[#>*_`~-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export const searchListings = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data }) => {
@@ -53,8 +70,12 @@ export const searchListings = createServerFn({ method: "POST" })
       SOURCES.map(async (domain) => {
         try {
           const res = await firecrawl.search(`${query} site:${domain}`, {
-            limit: 8,
+            limit: 6,
             sources: ["web"],
+            scrapeOptions: {
+              formats: ["markdown"],
+              onlyMainContent: true,
+            },
           } as any);
           // Normalize results across SDK shapes
           const items =
@@ -75,14 +96,25 @@ export const searchListings = createServerFn({ method: "POST" })
       const url: string = r.url ?? r.link ?? "";
       if (!url) return;
       const title: string = r.title ?? r.name ?? "Annuncio";
-      const description: string = r.description ?? r.snippet ?? r.markdown ?? "";
-      const price = extractPrice(`${title} ${description}`);
+      const md: string = r.markdown ?? r.data?.markdown ?? "";
+      const description: string =
+        r.description ?? r.snippet ?? r.metadata?.description ?? "";
+      const image: string | null =
+        r.metadata?.ogImage ??
+        r.metadata?.["og:image"] ??
+        r.metadata?.image ??
+        r.image ??
+        r.screenshot ??
+        extractFirstImage(md) ??
+        null;
+      const price = extractPrice(`${title} ${description} ${md}`);
       all.push({
         title: title.slice(0, 200),
         url,
-        description: description.slice(0, 400),
+        description: (description || stripMarkdown(md)).slice(0, 300),
         price,
         source: sourceFromUrl(url),
+        image,
       });
     });
 

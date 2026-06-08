@@ -1,7 +1,6 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap");
 
 @custom-variant dark (&:is(.dark *));
 
@@ -64,7 +63,7 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(0.985 0.005 80);
+  --background: oklch(1 0 0);
   --foreground: oklch(0.18 0.01 60);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.18 0.01 60);

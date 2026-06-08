@@ -111,12 +111,7 @@ export const searchListings = createServerFn({ method: "POST" })
             (res as any)?.data?.web ??
             (res as any)?.data ??
             [];
-          const arr = Array.isArray(items) ? items : [];
-          console.log(
-            `[searchListings] ${domain} -> ${arr.length} raw urls: ` +
-              JSON.stringify(arr.map((x: any) => x.url ?? x.link)),
-          );
-          return arr;
+          return Array.isArray(items) ? items : [];
         } catch (err) {
           console.error("Firecrawl search failed for", domain, err);
           return [];

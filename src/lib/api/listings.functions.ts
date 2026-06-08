@@ -39,6 +39,22 @@ function sourceFromUrl(url: string): string {
   }
 }
 
+function extractFirstImage(md: string): string | null {
+  if (!md) return null;
+  const m = md.match(/!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/);
+  return m?.[1] ?? null;
+}
+
+function stripMarkdown(md: string): string {
+  if (!md) return "";
+  return md
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/[#>*_`~-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export const searchListings = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data }) => {

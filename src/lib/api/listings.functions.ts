@@ -122,6 +122,7 @@ export const searchListings = createServerFn({ method: "POST" })
     perSource.flat().forEach((r: any) => {
       const url: string = r.url ?? r.link ?? "";
       if (!url) return;
+      if (!isDetailUrl(url)) return;
       const title: string = r.title ?? r.name ?? "Annuncio";
       const md: string = r.markdown ?? r.data?.markdown ?? "";
       const description: string =

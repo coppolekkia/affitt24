@@ -52,16 +52,10 @@ export const searchListings = createServerFn({ method: "POST" })
     const perSource = await Promise.all(
       SOURCES.map(async (domain) => {
         try {
-          const res = await firecrawl.search(query, {
+          const res = await firecrawl.search(`${query} site:${domain}`, {
             limit: 8,
-            lang: "it",
-            country: "it",
             sources: ["web"],
-            scrapeOptions: undefined,
-            // restrict to this source
-            // @ts-expect-error sdk accepts these as extra options
-            search_domain_filter: [domain],
-          });
+          } as any);
           // Normalize results across SDK shapes
           const items =
             (res as any)?.web ??

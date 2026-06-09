@@ -129,80 +129,90 @@ function Index() {
           )}
 
           {mutation.isSuccess && (
-            <div className="flex items-baseline justify-between mb-6">
-              <h2 className="font-serif text-2xl">
-                {listings.length} annunci trovati
-              </h2>
-              <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                ordinati per prezzo
-              </span>
+            <div className="flex flex-col md:flex-row gap-8">
+              <div className="flex-1 min-w-0 order-2 md:order-1">
+                <div className="flex items-baseline justify-between mb-6">
+                  <h2 className="font-serif text-2xl">
+                    {listings.length} annunci trovati
+                  </h2>
+                  <span className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                    ordinati per prezzo
+                  </span>
+                </div>
+
+                {listings.length === 0 && (
+                  <p className="text-muted-foreground">
+                    Nessun annuncio corrisponde ai filtri. Prova ad ampliare il
+                    range di prezzo o cambia città.
+                  </p>
+                )}
+
+                <ul className="divide-y divide-border border-t border-b border-border">
+                  {listings.map((l) => (
+                    <li key={l.url} className="py-6 group">
+                      <a
+                        href={l.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="grid grid-cols-1 md:grid-cols-[200px_1fr_auto] gap-6 items-start"
+                      >
+                        <div className="aspect-[4/3] w-full overflow-hidden rounded-md bg-muted border border-border">
+                          {l.image ? (
+                            <img
+                              src={l.image}
+                              alt={l.title}
+                              loading="lazy"
+                              referrerPolicy="no-referrer"
+                              className="h-full w-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground">
+                              nessuna foto
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="text-[10px] uppercase tracking-[0.2em] text-accent">
+                              {l.source}
+                            </span>
+                          </div>
+                          <h3 className="font-serif text-xl leading-snug group-hover:text-accent transition-colors">
+                            {l.title}
+                          </h3>
+                          {l.description && (
+                            <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
+                              {l.description}
+                            </p>
+                          )}
+                          <span className="inline-block mt-3 text-[11px] uppercase tracking-[0.2em] text-muted-foreground group-hover:text-accent">
+                            Vedi annuncio ↗
+                          </span>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="font-serif text-2xl">
+                            {l.price ? `€ ${l.price.toLocaleString("it-IT")}` : "—"}
+                          </div>
+                          <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                            {l.price ? "al mese" : "prezzo n.d."}
+                          </div>
+                        </div>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <aside className="order-1 md:order-2 w-full md:w-[300px] shrink-0 flex justify-center md:block">
+                <div className="md:sticky md:top-6">
+                  <AdSenseBanner />
+                </div>
+              </aside>
             </div>
           )}
-
-          {mutation.isSuccess && listings.length === 0 && (
-            <p className="text-muted-foreground">
-              Nessun annuncio corrisponde ai filtri. Prova ad ampliare il range
-              di prezzo o cambia città.
-            </p>
-          )}
-
-          <ul className="divide-y divide-border border-t border-b border-border">
-            {listings.map((l) => (
-              <li key={l.url} className="py-6 group">
-                <a
-                  href={l.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="grid grid-cols-1 md:grid-cols-[200px_1fr_auto] gap-6 items-start"
-                >
-                  <div className="aspect-[4/3] w-full overflow-hidden rounded-md bg-muted border border-border">
-                    {l.image ? (
-                      <img
-                        src={l.image}
-                        alt={l.title}
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
-                        className="h-full w-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground">
-                        nessuna foto
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="text-[10px] uppercase tracking-[0.2em] text-accent">
-                        {l.source}
-                      </span>
-                    </div>
-                    <h3 className="font-serif text-xl leading-snug group-hover:text-accent transition-colors">
-                      {l.title}
-                    </h3>
-                    {l.description && (
-                      <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
-                        {l.description}
-                      </p>
-                    )}
-                    <span className="inline-block mt-3 text-[11px] uppercase tracking-[0.2em] text-muted-foreground group-hover:text-accent">
-                      Vedi annuncio ↗
-                    </span>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <div className="font-serif text-2xl">
-                      {l.price ? `€ ${l.price.toLocaleString("it-IT")}` : "—"}
-                    </div>
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                      {l.price ? "al mese" : "prezzo n.d."}
-                    </div>
-                  </div>
-                </a>
-              </li>
-            ))}
-          </ul>
         </section>
       </main>
 

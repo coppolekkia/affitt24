@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { searchListings, type Listing } from "@/lib/api/listings.functions";
@@ -21,6 +21,7 @@ function Index() {
   const [city, setCity] = useState("Milano");
   const [minPrice, setMinPrice] = useState<string>("500");
   const [maxPrice, setMaxPrice] = useState<string>("900");
+  const didAutoSearch = useRef(false);
 
   const mutation = useMutation({
     mutationFn: (input: { city: string; minPrice?: number; maxPrice?: number }) =>
@@ -29,6 +30,8 @@ function Index() {
 
   // Auto-run a default search on first load: Milano, 500–900€
   useEffect(() => {
+    if (didAutoSearch.current) return;
+    didAutoSearch.current = true;
     mutation.mutate({ city: "Milano", minPrice: 500, maxPrice: 900 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

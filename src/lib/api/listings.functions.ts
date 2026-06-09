@@ -26,6 +26,41 @@ export type Listing = {
   image: string | null;
 };
 
+type SearchListingsResult = {
+  listings: Listing[];
+  total: number;
+};
+
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const SOURCE_TIMEOUT_MS = 9000;
+const searchCache = new Map<string, { expiresAt: number; value: SearchListingsResult }>();
+
+function buildCacheKey(data: z.infer<typeof InputSchema>): string {
+  return JSON.stringify({
+    city: data.city.trim().toLowerCase(),
+    minPrice: data.minPrice ?? null,
+    maxPrice: data.maxPrice ?? null,
+  });
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`${label} timed out`));
+    }, timeoutMs);
+
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+}
+
 function extractPrice(text: string): number | null {
   if (!text) return null;
   // Match like "€ 1.200", "1200 €", "EUR 950"
@@ -89,6 +124,12 @@ function stripMarkdown(md: string): string {
 export const searchListings = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => InputSchema.parse(data))
   .handler(async ({ data }) => {
+    const cacheKey = buildCacheKey(data);
+    const cached = searchCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.value;
+    }
+
     const apiKey = process.env.FIRECRAWL_API_KEY;
     if (!apiKey) {
       throw new Error("FIRECRAWL_API_KEY non configurata");
@@ -99,14 +140,18 @@ export const searchListings = createServerFn({ method: "POST" })
       SOURCES.map(async (domain) => {
         try {
           const q = `${SOURCE_QUERIES[domain]} affitto appartamento ${data.city}`;
-          const res = await firecrawl.search(q, {
-            limit: 10,
-            sources: ["web"],
-            scrapeOptions: {
-              formats: ["markdown"],
-              onlyMainContent: true,
-            },
-          } as any);
+          const res = await withTimeout(
+            firecrawl.search(q, {
+              limit: 5,
+              sources: ["web"],
+              scrapeOptions: {
+                formats: ["markdown"],
+                onlyMainContent: true,
+              },
+            } as any),
+            SOURCE_TIMEOUT_MS,
+            domain,
+          );
           // Normalize results across SDK shapes
           const items =
             (res as any)?.web ??
@@ -171,5 +216,19 @@ export const searchListings = createServerFn({ method: "POST" })
       return a.price - b.price;
     });
 
-    return { listings: filtered, total: filtered.length };
+    const result = { listings: filtered, total: filtered.length };
+
+    if (filtered.length > 0) {
+      searchCache.set(cacheKey, {
+        expiresAt: Date.now() + CACHE_TTL_MS,
+        value: result,
+      });
+      return result;
+    }
+
+    if (cached?.value.listings.length) {
+      return cached.value;
+    }
+
+    return result;
   });

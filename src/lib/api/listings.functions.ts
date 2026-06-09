@@ -102,8 +102,10 @@ export const searchListings = createServerFn({ method: "POST" })
           const res = await firecrawl.search(q, {
             limit: 10,
             sources: ["web"],
-            // Skip scrape on search to keep things fast & cheap;
-            // we'll fall back to metadata only.
+            scrapeOptions: {
+              formats: ["markdown"],
+              onlyMainContent: true,
+            },
           } as any);
           // Normalize results across SDK shapes
           const items =

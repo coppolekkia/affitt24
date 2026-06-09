@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { searchListings, type Listing } from "@/lib/api/listings.functions";
+import { AdSenseBanner } from "@/components/AdSenseBanner";
 
 export const Route = createFileRoute("/")({
   head: () => ({

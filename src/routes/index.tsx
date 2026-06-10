@@ -24,7 +24,8 @@ function Index() {
   const [city, setCity] = useState("Milano");
   const [minPrice, setMinPrice] = useState<string>("500");
   const [maxPrice, setMaxPrice] = useState<string>("900");
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [page, setPage] = useState(1);
+  const resultsRef = useRef<HTMLDivElement>(null);
   const didAutoSearch = useRef(false);
 
   const mutation = useMutation({
@@ -43,7 +44,7 @@ function Index() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!city.trim()) return;
-    setVisibleCount(PAGE_SIZE);
+    setPage(1);
     mutation.mutate({
       city: city.trim(),
       minPrice: minPrice ? Number(minPrice) : undefined,
@@ -52,8 +53,9 @@ function Index() {
   };
 
   const allListings: Listing[] = mutation.data?.listings ?? [];
-  const listings = allListings.slice(0, visibleCount);
-  const hasMore = allListings.length > visibleCount;
+  const totalPages = Math.max(1, Math.ceil(allListings.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const listings = allListings.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   return (
     <div className="min-h-screen bg-background text-foreground">

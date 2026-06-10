@@ -142,7 +142,7 @@ export const searchListings = createServerFn({ method: "POST" })
           const q = `${SOURCE_QUERIES[domain]} affitto appartamento ${data.city}`;
           const res = await withTimeout(
             firecrawl.search(q, {
-              limit: 5,
+              limit: 15,
               sources: ["web"],
               scrapeOptions: {
                 formats: ["markdown"],

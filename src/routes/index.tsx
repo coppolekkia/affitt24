@@ -5,6 +5,8 @@ import { useMutation } from "@tanstack/react-query";
 import { searchListings, type Listing } from "@/lib/api/listings.functions";
 import { AdSenseBanner } from "@/components/AdSenseBanner";
 
+const PAGE_SIZE = 10;
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [

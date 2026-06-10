@@ -210,6 +210,17 @@ function Index() {
                     </li>
                   ))}
                 </ul>
+
+                {hasMore && (
+                  <div className="mt-8 flex justify-center">
+                    <button
+                      onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                      className="bg-primary text-primary-foreground px-8 py-3 rounded-md text-sm uppercase tracking-[0.15em] hover:bg-accent transition-colors"
+                    >
+                      Carica altri annunci
+                    </button>
+                  </div>
+                )}
               </div>
 
               <aside className="order-1 md:order-2 w-full md:w-[300px] shrink-0 flex justify-center md:block">

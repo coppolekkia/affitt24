@@ -213,15 +213,46 @@ function Index() {
                   ))}
                 </ul>
 
-                {hasMore && (
-                  <div className="mt-8 flex justify-center">
+                {totalPages > 1 && (
+                  <nav className="mt-8 flex items-center justify-center gap-2" aria-label="Paginazione">
                     <button
-                      onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
-                      className="bg-primary text-primary-foreground px-8 py-3 rounded-md text-sm uppercase tracking-[0.15em] hover:bg-accent transition-colors"
+                      onClick={() => {
+                        setPage((p) => Math.max(1, p - 1));
+                        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                      disabled={safePage <= 1}
+                      className="px-3 py-2 text-sm uppercase tracking-[0.15em] rounded-md border border-border hover:border-accent disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                     >
-                      Carica altri annunci
+                      Precedente
                     </button>
-                  </div>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => {
+                          setPage(n);
+                          resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }}
+                        className={`w-10 h-10 text-sm rounded-md border transition-colors ${
+                          n === safePage
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "border-border hover:border-accent"
+                        }`}
+                        aria-current={n === safePage ? "page" : undefined}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => {
+                        setPage((p) => Math.min(totalPages, p + 1));
+                        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                      disabled={safePage >= totalPages}
+                      className="px-3 py-2 text-sm uppercase tracking-[0.15em] rounded-md border border-border hover:border-accent disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Successiva
+                    </button>
+                  </nav>
                 )}
               </div>
 

@@ -32,7 +32,7 @@ type SearchListingsResult = {
 };
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
-const SOURCE_TIMEOUT_MS = 9000;
+const SOURCE_TIMEOUT_MS = 20000;
 const searchCache = new Map<string, { expiresAt: number; value: SearchListingsResult }>();
 
 function buildCacheKey(data: z.infer<typeof InputSchema>): string {
@@ -136,14 +136,33 @@ export const searchListings = createServerFn({ method: "POST" })
     }
     const firecrawl = new Firecrawl({ apiKey });
 
+    // Multiple query variants per source to maximize coverage
+    const queryVariants = (domain: (typeof SOURCES)[number]) => {
+      const base = SOURCE_QUERIES[domain];
+      const city = data.city;
+      return [
+        `${base} affitto appartamento ${city}`,
+        `${base} affitto bilocale ${city}`,
+        `${base} affitto trilocale ${city}`,
+        `${base} affitto monolocale ${city}`,
+      ];
+    };
+
+    const searchTasks: Array<{ domain: (typeof SOURCES)[number]; query: string }> = [];
+    SOURCES.forEach((domain) => {
+      queryVariants(domain).forEach((query) => searchTasks.push({ domain, query }));
+    });
+
     const perSource = await Promise.all(
-      SOURCES.map(async (domain) => {
+      searchTasks.map(async ({ domain, query }) => {
         try {
-          const q = `${SOURCE_QUERIES[domain]} affitto appartamento ${data.city}`;
           const res = await withTimeout(
-            firecrawl.search(q, {
-              limit: 15,
+            firecrawl.search(query, {
+              limit: 20,
               sources: ["web"],
+              tbs: "qdr:y",
+              lang: "it",
+              country: "it",
               scrapeOptions: {
                 formats: ["markdown"],
                 onlyMainContent: true,

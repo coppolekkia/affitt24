@@ -5,6 +5,8 @@ import { useMutation } from "@tanstack/react-query";
 import { searchListings, type Listing } from "@/lib/api/listings.functions";
 import { AdSenseBanner } from "@/components/AdSenseBanner";
 
+const PAGE_SIZE = 10;
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -22,6 +24,7 @@ function Index() {
   const [city, setCity] = useState("Milano");
   const [minPrice, setMinPrice] = useState<string>("500");
   const [maxPrice, setMaxPrice] = useState<string>("900");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const didAutoSearch = useRef(false);
 
   const mutation = useMutation({
@@ -40,6 +43,7 @@ function Index() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!city.trim()) return;
+    setVisibleCount(PAGE_SIZE);
     mutation.mutate({
       city: city.trim(),
       minPrice: minPrice ? Number(minPrice) : undefined,
@@ -47,7 +51,9 @@ function Index() {
     });
   };
 
-  const listings: Listing[] = mutation.data?.listings ?? [];
+  const allListings: Listing[] = mutation.data?.listings ?? [];
+  const listings = allListings.slice(0, visibleCount);
+  const hasMore = allListings.length > visibleCount;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -204,6 +210,17 @@ function Index() {
                     </li>
                   ))}
                 </ul>
+
+                {hasMore && (
+                  <div className="mt-8 flex justify-center">
+                    <button
+                      onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                      className="bg-primary text-primary-foreground px-8 py-3 rounded-md text-sm uppercase tracking-[0.15em] hover:bg-accent transition-colors"
+                    >
+                      Carica altri annunci
+                    </button>
+                  </div>
+                )}
               </div>
 
               <aside className="order-1 md:order-2 w-full md:w-[300px] shrink-0 flex justify-center md:block">

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
@@ -158,10 +159,16 @@ function Index() {
                 <ul className="divide-y divide-border border-t border-b border-border">
                   {listings.map((l) => (
                     <li key={l.url} className="py-6 group">
-                      <a
-                        href={l.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <Link
+                        to="/annuncio"
+                        search={{
+                          url: l.url,
+                          title: l.title,
+                          image: l.image ?? undefined,
+                          price: l.price ?? undefined,
+                          source: l.source,
+                          description: l.description,
+                        }}
                         className="grid grid-cols-1 md:grid-cols-[200px_1fr_auto] gap-6 items-start"
                       >
                         <div className="aspect-[4/3] w-full overflow-hidden rounded-md bg-muted border border-border">
@@ -197,7 +204,7 @@ function Index() {
                             </p>
                           )}
                           <span className="inline-block mt-3 text-[11px] uppercase tracking-[0.2em] text-muted-foreground group-hover:text-accent">
-                            Vedi annuncio ↗
+                            Vedi annuncio →
                           </span>
                         </div>
                         <div className="text-right shrink-0">
@@ -208,7 +215,7 @@ function Index() {
                             {l.price ? "al mese" : "prezzo n.d."}
                           </div>
                         </div>
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </ul>

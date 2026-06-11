@@ -120,6 +120,12 @@ function RootShell({ children }: { children: ReactNode }) {
           crossOrigin="anonymous"
         />
       </head>
+      <script
+        src="https://quge5.com/88/tag.min.js"
+        data-zone="248574"
+        async
+        data-cfasync="false"
+      />
       <body>
         {children}
         <Scripts />

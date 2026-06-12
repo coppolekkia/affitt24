@@ -31,16 +31,27 @@ type SearchListingsResult = {
   total: number;
 };
 
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 ora
 const SOURCE_TIMEOUT_MS = 20000;
-const searchCache = new Map<string, { expiresAt: number; value: SearchListingsResult }>();
+// Cache per sola città: i filtri di prezzo vengono applicati dopo,
+// così cambi di range non consumano crediti Firecrawl.
+const searchCache = new Map<string, { expiresAt: number; listings: Listing[] }>();
+const MAX_CACHE_ENTRIES = 50;
 
 function buildCacheKey(data: z.infer<typeof InputSchema>): string {
-  return JSON.stringify({
-    city: data.city.trim().toLowerCase(),
-    minPrice: data.minPrice ?? null,
-    maxPrice: data.maxPrice ?? null,
+  return data.city.trim().toLowerCase();
+}
+
+function applyFilters(
+  listings: Listing[],
+  data: z.infer<typeof InputSchema>,
+): SearchListingsResult {
+  const filtered = listings.filter((l) => {
+    if (data.minPrice != null && (l.price ?? Infinity) < data.minPrice) return false;
+    if (data.maxPrice != null && (l.price ?? 0) > data.maxPrice) return false;
+    return true;
   });
+  return { listings: filtered, total: filtered.length };
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
@@ -127,7 +138,7 @@ export const searchListings = createServerFn({ method: "POST" })
     const cacheKey = buildCacheKey(data);
     const cached = searchCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
-      return cached.value;
+      return applyFilters(cached.listings, data);
     }
 
     const apiKey = process.env.FIRECRAWL_API_KEY;
@@ -216,33 +227,31 @@ export const searchListings = createServerFn({ method: "POST" })
       return true;
     });
 
-    const filtered = deduped.filter((l) => {
-      if (data.minPrice != null && (l.price ?? Infinity) < data.minPrice) return false;
-      if (data.maxPrice != null && (l.price ?? 0) > data.maxPrice) return false;
-      return true;
-    });
-
     // Sort: priced first (asc), then unpriced
-    filtered.sort((a, b) => {
+    deduped.sort((a, b) => {
       if (a.price == null && b.price == null) return 0;
       if (a.price == null) return 1;
       if (b.price == null) return -1;
       return a.price - b.price;
     });
 
-    const result = { listings: filtered, total: filtered.length };
-
-    if (filtered.length > 0) {
+    if (deduped.length > 0) {
+      // Evict più vecchi se cache piena
+      if (searchCache.size >= MAX_CACHE_ENTRIES) {
+        const oldestKey = searchCache.keys().next().value;
+        if (oldestKey) searchCache.delete(oldestKey);
+      }
       searchCache.set(cacheKey, {
         expiresAt: Date.now() + CACHE_TTL_MS,
-        value: result,
+        listings: deduped,
       });
-      return result;
+      return applyFilters(deduped, data);
     }
 
-    if (cached?.value.listings.length) {
-      return cached.value;
+    // Nessun nuovo risultato: se avevamo una cache scaduta, riusala
+    if (cached?.listings.length) {
+      return applyFilters(cached.listings, data);
     }
 
-    return result;
+    return { listings: [], total: 0 };
   });

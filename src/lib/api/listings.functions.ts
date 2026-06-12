@@ -140,12 +140,7 @@ export const searchListings = createServerFn({ method: "POST" })
     const queryVariants = (domain: (typeof SOURCES)[number]) => {
       const base = SOURCE_QUERIES[domain];
       const city = data.city;
-      return [
-        `${base} affitto appartamento ${city}`,
-        `${base} affitto bilocale ${city}`,
-        `${base} affitto trilocale ${city}`,
-        `${base} affitto monolocale ${city}`,
-      ];
+      return [`${base} affitto ${city}`];
     };
 
     const searchTasks: Array<{ domain: (typeof SOURCES)[number]; query: string }> = [];

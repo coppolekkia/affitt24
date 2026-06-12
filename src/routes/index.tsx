@@ -57,6 +57,9 @@ function Index() {
   const totalPages = Math.max(1, Math.ceil(allListings.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const listings = allListings.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const errorMessage = mutation.error instanceof Error
+    ? mutation.error.message
+    : "Errore nella ricerca. Riprova tra qualche istante.";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -133,7 +136,7 @@ function Index() {
         <section className="mt-12">
           {mutation.isError && (
             <p className="text-destructive text-sm">
-              Errore nella ricerca. Riprova tra qualche istante.
+              {errorMessage}
             </p>
           )}
 

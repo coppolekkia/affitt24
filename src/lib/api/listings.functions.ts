@@ -31,6 +31,11 @@ type SearchListingsResult = {
   total: number;
 };
 
+type SourceSearchResult = {
+  error: Error | null;
+  items: any[];
+};
+
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 ora
 const SOURCE_TIMEOUT_MS = 20000;
 // Cache per sola città: i filtri di prezzo vengono applicati dopo,
@@ -183,16 +188,42 @@ export const searchListings = createServerFn({ method: "POST" })
             (res as any)?.data?.web ??
             (res as any)?.data ??
             [];
-          return Array.isArray(items) ? items : [];
+          return {
+            error: null,
+            items: Array.isArray(items) ? items : [],
+          } satisfies SourceSearchResult;
         } catch (err) {
           console.error("Firecrawl search failed for", domain, err);
-          return [];
+          return {
+            error: err instanceof Error ? err : new Error(String(err)),
+            items: [],
+          } satisfies SourceSearchResult;
         }
       }),
     );
 
+    const failedSources = perSource.filter((result) => result.error);
+    const allFailed = failedSources.length === perSource.length;
+    const exhaustedCredits = failedSources.some((result) =>
+      result.error?.message.toLowerCase().includes("insufficient credits"),
+    );
+
+    if (allFailed) {
+      if (cached?.listings.length) {
+        return applyFilters(cached.listings, data);
+      }
+
+      if (exhaustedCredits) {
+        throw new Error(
+          "Crediti del motore di ricerca esauriti. Aggiorna la chiave Firecrawl o ricarica il piano per vedere nuovi annunci.",
+        );
+      }
+
+      throw new Error("Ricerca temporaneamente non disponibile. Riprova tra qualche minuto.");
+    }
+
     const all: Listing[] = [];
-    perSource.flat().forEach((r: any) => {
+    perSource.flatMap((result) => result.items).forEach((r: any) => {
       const url: string = r.url ?? r.link ?? "";
       if (!url) return;
       if (!isDetailUrl(url)) return;

@@ -29,6 +29,7 @@ export type Listing = {
 type SearchListingsResult = {
   listings: Listing[];
   total: number;
+  error?: string;
 };
 
 type SourceSearchResult = {

@@ -29,6 +29,7 @@ export type Listing = {
 type SearchListingsResult = {
   listings: Listing[];
   total: number;
+  error?: string;
 };
 
 type SourceSearchResult = {
@@ -214,12 +215,19 @@ export const searchListings = createServerFn({ method: "POST" })
       }
 
       if (exhaustedCredits) {
-        throw new Error(
-          "Crediti del motore di ricerca esauriti. Aggiorna la chiave Firecrawl o ricarica il piano per vedere nuovi annunci.",
-        );
+        return {
+          listings: [],
+          total: 0,
+          error:
+            "Crediti del motore di ricerca esauriti. Aggiorna la chiave Firecrawl o ricarica il piano per vedere nuovi annunci.",
+        };
       }
 
-      throw new Error("Ricerca temporaneamente non disponibile. Riprova tra qualche minuto.");
+      return {
+        listings: [],
+        total: 0,
+        error: "Ricerca temporaneamente non disponibile. Riprova tra qualche minuto.",
+      };
     }
 
     const all: Listing[] = [];

@@ -57,9 +57,11 @@ function Index() {
   const totalPages = Math.max(1, Math.ceil(allListings.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const listings = allListings.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-  const errorMessage = mutation.error instanceof Error
-    ? mutation.error.message
-    : "Errore nella ricerca. Riprova tra qualche istante.";
+  const errorMessage = mutation.data?.error
+    ?? (mutation.error instanceof Error
+      ? mutation.error.message
+      : "Errore nella ricerca. Riprova tra qualche istante.");
+  const hasError = mutation.isError || !!mutation.data?.error;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -134,13 +136,13 @@ function Index() {
         </form>
 
         <section className="mt-12">
-          {mutation.isError && (
+          {hasError && (
             <p className="text-destructive text-sm">
               {errorMessage}
             </p>
           )}
 
-          {mutation.isSuccess && (
+          {mutation.isSuccess && !mutation.data?.error && (
             <div className="flex flex-col md:flex-row gap-8">
               <div className="flex-1 min-w-0 order-2 md:order-1">
                 <div className="flex items-baseline justify-between mb-6">
